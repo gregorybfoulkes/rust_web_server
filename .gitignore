@@ -1,0 +1,16 @@
+# Rust build directory
+/target/
+
+# Rust package manager lock file (optional, but recommended to include)
+Cargo.lock
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+.env
+*.pem
