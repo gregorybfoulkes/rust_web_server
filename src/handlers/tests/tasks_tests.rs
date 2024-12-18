@@ -10,6 +10,14 @@ use bytes::Bytes;
 use http_body_util::{Full, BodyExt};
 use hyper::body::Body;
 
+/// Create a hyper::Request from the given method, uri, and body. The body is serialized to json
+/// before being added to the request. The request is given a content-type header of application/json.
+///
+/// # Panics
+/// If the body cannot be serialized to json, the function will panic.
+///
+/// # Returns
+/// The created request.
 fn create_json_request<T: serde::Serialize>(method: hyper::Method, uri: &str, body: &T) -> Request<Incoming> {
     let body_str = serde_json::to_string(body).unwrap();
     let bytes = Bytes::from(body_str);
@@ -27,11 +35,25 @@ fn create_json_request<T: serde::Serialize>(method: hyper::Method, uri: &str, bo
         .unwrap()
 }
 
+/// Deserialize the body of a hyper::Response into a serde_json::Value.
+///
+/// The response body is collected and then deserialized into a serde_json::Value.
+///
+/// # Panics
+/// If the body cannot be deserialized into a serde_json::Value, the function will panic.
 async fn get_body_json(response: Response<Full<Bytes>>) -> Value {
     let body_bytes = response.into_body().collect().await.unwrap().to_bytes();
     serde_json::from_slice(&body_bytes).unwrap()
 }
 
+/// Test that a task can be created successfully.
+///
+/// Verifies that:
+///
+/// * The response status is 201 Created.
+/// * The response body is JSON with the expected structure.
+/// * The response body contains the expected request ID, timestamp, and processing time.
+///
 #[tokio::test]
 async fn test_handle_create_task() {
     let store = Arc::new(Store::new());
