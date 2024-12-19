@@ -9,6 +9,17 @@ use tokio::time::Instant;
 use uuid::Uuid;
 use tracing::instrument;
 
+/// Handler for creating a new task.
+///
+/// This function takes in a hyper request, a Store instance, a request ID, and
+/// a start time.  It returns a hyper response with a JSON body containing the
+/// newly created task's ID, as well as a message, request ID, timestamp, and
+/// processing time.
+///
+/// If the request body is invalid, the function returns a 400 Bad Request
+/// response with an error message.
+///
+/// The function is instrumented with tracing.
 #[instrument(skip_all)]
 pub async fn handle_create_task(
     req: Request<Incoming>,
@@ -57,7 +68,7 @@ pub async fn handle_update_task(
     task_id_str: &str,
     request_id: Uuid,
     start_time: Instant,
-) -> Result<Response<Full<Bytes>>, hyper::Error> {
+) {
     let task_id = match task_id_str.parse::<u64>() {
         Ok(id) => id,
         Err(_) => return respond_with_error("Invalid task ID", request_id, start_time, StatusCode::BAD_REQUEST),
@@ -112,13 +123,12 @@ fn respond_with_error(
 }
 
 // Handler for deleting a task
-#[instrument(skip(store))]
 pub async fn handle_delete_task(
     store: Arc<Store>,
     task_id_str: &str,
     request_id: Uuid,
     start_time: Instant,
-) -> Result<Response<Full<Bytes>>, hyper::Error> {
+) {
     let task_id = match task_id_str.parse::<u64>() {
         Ok(id) => id,
         Err(_) => {
@@ -170,8 +180,7 @@ pub async fn handle_delete_task(
 }
 
 // Handler for listing all tasks
-#[instrument(skip(store))]
-pub async fn handle_list_tasks(store: Arc<Store>, request_id: Uuid) -> Result<Response<Full<Bytes>>, hyper::Error> {
+pub async fn handle_list_tasks(store: Arc<Store>, request_id: Uuid) {
     let start_time = Instant::now();
     let tasks = store.list_tasks().await;
 
