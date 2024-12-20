@@ -198,3 +198,58 @@ pub async fn handle_list_tasks(store: Arc<Store>, request_id: Uuid) -> Result<Re
         .unwrap())
 }
 
+pub async fn handle_get_task(
+    store: Arc<Store>,
+    task_id_str: &str,
+    request_id: Uuid,
+    start_time: Instant,
+) -> Result<Response<Full<Bytes>>, hyper::Error> {
+    let task_id = match task_id_str.parse::<u64>() {
+        Ok(id) => id,
+        Err(_) => {
+            let error_response = json!({
+                "error": "Invalid task ID",
+                "request_id": request_id.to_string(),
+                "timestamp": chrono::Utc::now().to_rfc3339(),
+                "processing_time_ms": start_time.elapsed().as_millis()
+            });
+            let error_bytes = Bytes::from(error_response.to_string());
+            return Ok(Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .header("content-type", "application/json")
+                .body(Full::new(error_bytes))
+                .unwrap());
+        }
+    };
+
+    match store.get_task(task_id).await {
+        Some(task) => {
+            let success_response = json!({
+                "task": task,
+                "request_id": request_id.to_string(),
+                "timestamp": chrono::Utc::now().to_rfc3339(),
+                "processing_time_ms": start_time.elapsed().as_millis()
+            });
+            let success_bytes = Bytes::from(success_response.to_string());
+            Ok(Response::builder()
+                .status(StatusCode::OK)
+                .header("content-type", "application/json")
+                .body(Full::new(success_bytes))
+                .unwrap())
+        }
+        None => {
+            let error_response = json!({
+                "error": "Task not found",
+                "request_id": request_id.to_string(),
+                "timestamp": chrono::Utc::now().to_rfc3339(),
+                "processing_time_ms": start_time.elapsed().as_millis()
+            });
+            let error_bytes = Bytes::from(error_response.to_string());
+            Ok(Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .header("content-type", "application/json")
+                .body(Full::new(error_bytes))
+                .unwrap())
+        }
+    }
+}
