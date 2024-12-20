@@ -22,14 +22,14 @@ use tracing::instrument;
 /// The function is instrumented with tracing.
 #[instrument(skip_all)]
 pub async fn handle_create_task(
-    req: Request<Incoming>,
+    mut req: Request<Incoming>,
     store: Arc<Store>,
     request_id: Uuid,
     start_time: Instant,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let body = req
         .body_mut()
-        .collect::<Result<Incoming, hyper::Error>>()
+        .collect()
         .await?
         .to_bytes();
     let task_data = match serde_json::from_slice::<CreateTask>(&body) {
@@ -68,7 +68,7 @@ pub async fn handle_update_task(
     task_id_str: &str,
     request_id: Uuid,
     start_time: Instant,
-) {
+) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let task_id = match task_id_str.parse::<u64>() {
         Ok(id) => id,
         Err(_) => return respond_with_error("Invalid task ID", request_id, start_time, StatusCode::BAD_REQUEST),
@@ -128,7 +128,7 @@ pub async fn handle_delete_task(
     task_id_str: &str,
     request_id: Uuid,
     start_time: Instant,
-) {
+) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let task_id = match task_id_str.parse::<u64>() {
         Ok(id) => id,
         Err(_) => {
@@ -180,7 +180,7 @@ pub async fn handle_delete_task(
 }
 
 // Handler for listing all tasks
-pub async fn handle_list_tasks(store: Arc<Store>, request_id: Uuid) {
+pub async fn handle_list_tasks(store: Arc<Store>, request_id: Uuid) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let start_time = Instant::now();
     let tasks = store.list_tasks().await;
 
