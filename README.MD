@@ -1,7 +1,6 @@
-**A Simple Rust Rust Web Server and Task Management API
-**
+**A Simple Rust Web Server and Task Management API**
 
-//NOTES
+**Notes**
 - Add documentation
 - Secure
 - Debug
@@ -9,3 +8,4 @@
 - Add auth
 - Its a form
 - Add database PostgresSQL
+- fix tests
