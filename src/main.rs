@@ -28,9 +28,44 @@ use handlers::*;
 /// call the corresponding handler.  If the request is invalid, it returns a 404
 /// Not Found response.  If the handler returns an error, it returns a 500
 /// Internal Server Error response.
+/// 
+/// This is the main entrypoint for the web server.  It sets up a TCP listener on
+/// localhost port 3000 and spawns a new task for each incoming connection.  Each
+/// task serves the connection using the `router` function, which calls the
+/// corresponding handler for the request.
 ///
 /// The handler functions are in the `handlers` module.  The router is used in
 /// the `main` function to create a hyper service.
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let listener = TcpListener::bind(addr).await?;
+    let store = Arc::new(Store::new());
+    println!("Server running on http://{}", addr);
+
+    loop {
+        let (stream, _) = listener.accept().await?;
+        let io = TokioIo::new(stream);
+        let store = Arc::clone(&store);
+        
+        tokio::task::spawn(async move {
+            if let Err(err) = http1::Builder::new()
+                .serve_connection(io, service_fn(move |req| router(req, store.clone())))
+                .await
+            {
+                eprintln!("Error serving connection: {}", err);
+            }
+        });
+    }
+}
+
+/// The router function takes in a hyper request and matches on the method and
+/// path to call the corresponding handler.  If the request is invalid, it
+/// returns a 404 Not Found response.  If the handler returns an error, it
+/// returns a 500 Internal Server Error response.
+
+
 async fn router(
     req: Request<Incoming>,
     store: Arc<Store>,
@@ -71,31 +106,4 @@ async fn router(
             .body(Full::new(Bytes::from(format!("Internal Server Error: {}", err))))
             .unwrap()
     }))
-}
-
-/// This is the main entrypoint for the web server.  It sets up a TCP listener on
-/// localhost port 3000 and spawns a new task for each incoming connection.  Each
-/// task serves the connection using the `router` function, which calls the
-/// corresponding handler for the request.
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    let listener = TcpListener::bind(addr).await?;
-    let store = Arc::new(Store::new());
-    println!("Server running on http://{}", addr);
-
-    loop {
-        let (stream, _) = listener.accept().await?;
-        let io = TokioIo::new(stream);
-        let store = Arc::clone(&store);
-        
-        tokio::task::spawn(async move {
-            if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(move |req| router(req, store.clone())))
-                .await
-            {
-                eprintln!("Error serving connection: {}", err);
-            }
-        });
-    }
-}
+} 
