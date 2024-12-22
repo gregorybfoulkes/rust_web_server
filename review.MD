@@ -15,4 +15,5 @@
 - install SDK for Soroban
 - write simple Stellar smart contract
 - create DEFI app something
+- update README.MD
 **/
