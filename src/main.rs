@@ -39,7 +39,7 @@ use handlers::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     let listener = TcpListener::bind(addr).await?;
     let store = Arc::new(Store::new());
     println!("Server running on http://{}", addr);

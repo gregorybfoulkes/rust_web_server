@@ -12,7 +12,7 @@ impl Default for Config {
     /// * `addr`: `127.0.0.1:3000`
     fn default() -> Self {
         Config {
-            addr: SocketAddr::from(([127, 0, 0, 1], 3000)),
+            addr: SocketAddr::from(([127, 0, 0, 1], 3001)),
         }
     }
 }
